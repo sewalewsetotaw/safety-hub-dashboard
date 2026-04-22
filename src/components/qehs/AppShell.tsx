@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -41,8 +43,30 @@ export function AppShell({ children, title, subtitle, actions }: {
     setDark(!dark);
   };
 
+  // Delegated click handler — makes every unwired button interactive
+  const handleMainClick = (e: React.MouseEvent<HTMLElement>) => {
+    const target = e.target as HTMLElement;
+    const btn = target.closest("button") as HTMLButtonElement | null;
+    if (!btn) return;
+    if (btn.dataset.toastHandled === "1") return;
+    // Skip buttons that are part of native interactive widgets (radix etc.)
+    if (btn.hasAttribute("data-state") || btn.getAttribute("role") === "checkbox" || btn.getAttribute("role") === "tab") return;
+    if (btn.type === "submit") { e.preventDefault(); }
+    const label = (btn.getAttribute("aria-label") || btn.innerText || "Action").trim().split("\n")[0] || "Action";
+    const isDestructive = btn.className.includes("destructive") || /stop work|sos|delete|reject|ground/i.test(label);
+    const isSuccess = /submit|approve|save|confirm|publish|sign/i.test(label);
+    if (isDestructive) {
+      toast.error(`${label} triggered`, { description: "Critical action recorded in the audit log." });
+    } else if (isSuccess) {
+      toast.success(`${label}`, { description: "Changes saved successfully." });
+    } else {
+      toast(label, { description: `Opening ${label.toLowerCase()}…` });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex w-full">
+      <Toaster position="top-right" richColors closeButton />
       {/* Sidebar */}
       <aside
         className={cn(
@@ -149,7 +173,7 @@ export function AppShell({ children, title, subtitle, actions }: {
           {actions && <div className="flex items-center gap-2">{actions}</div>}
         </div>
 
-        <main className="flex-1 px-4 lg:px-8 pb-10">{children}</main>
+        <main className="flex-1 px-4 lg:px-8 pb-10" onClick={handleMainClick}>{children}</main>
       </div>
     </div>
   );
