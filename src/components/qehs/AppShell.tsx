@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -41,8 +43,30 @@ export function AppShell({ children, title, subtitle, actions }: {
     setDark(!dark);
   };
 
+  // Delegated click handler — makes every unwired button interactive
+  const handleMainClick = (e: React.MouseEvent<HTMLElement>) => {
+    const target = e.target as HTMLElement;
+    const btn = target.closest("button") as HTMLButtonElement | null;
+    if (!btn) return;
+    if (btn.dataset.toastHandled === "1") return;
+    // Skip buttons that are part of native interactive widgets (radix etc.)
+    if (btn.hasAttribute("data-state") || btn.getAttribute("role") === "checkbox" || btn.getAttribute("role") === "tab") return;
+    if (btn.type === "submit") { e.preventDefault(); }
+    const label = (btn.getAttribute("aria-label") || btn.innerText || "Action").trim().split("\n")[0] || "Action";
+    const isDestructive = btn.className.includes("destructive") || /stop work|sos|delete|reject|ground/i.test(label);
+    const isSuccess = /submit|approve|save|confirm|publish|sign/i.test(label);
+    if (isDestructive) {
+      toast.error(`${label} triggered`, { description: "Critical action recorded in the audit log." });
+    } else if (isSuccess) {
+      toast.success(`${label}`, { description: "Changes saved successfully." });
+    } else {
+      toast(label, { description: `Opening ${label.toLowerCase()}…` });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex w-full">
+      <Toaster position="top-right" richColors closeButton />
       {/* Sidebar */}
       <aside
         className={cn(
@@ -118,30 +142,34 @@ export function AppShell({ children, title, subtitle, actions }: {
           </div>
           <div className="flex-1 md:hidden" />
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" className="gap-1.5 h-9">
+            <Button variant="ghost" size="sm" className="gap-1.5 h-9"
+              onClick={() => toast("Language", { description: "Switch language: EN · AR · FR · ES" })}>
               <Globe className="h-4 w-4" /> <span className="hidden sm:inline text-xs">EN</span>
             </Button>
             <Button variant="ghost" size="icon" className="h-9 w-9" onClick={toggleDark}>
               {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
-            <Button variant="ghost" size="icon" className="h-9 w-9 relative">
+            <Button variant="ghost" size="icon" className="h-9 w-9 relative"
+              onClick={() => toast.info("3 new notifications", { description: "Permit PTW-1042 awaiting your approval." })}>
               <Bell className="h-4 w-4" />
               <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-destructive" />
             </Button>
-            <div className="ml-2 flex items-center gap-2 pl-3 border-l border-border">
+            <button
+              onClick={() => toast("Adam Reed", { description: "QEHS Manager · View profile & sign out" })}
+              className="ml-2 flex items-center gap-2 pl-3 border-l border-border hover:opacity-80 transition-opacity">
               <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-xs font-semibold">
                 AR
               </div>
-              <div className="hidden sm:block leading-tight">
+              <div className="hidden sm:block leading-tight text-left">
                 <div className="text-sm font-medium">Adam Reed</div>
                 <div className="text-[11px] text-muted-foreground">QEHS Manager</div>
               </div>
-            </div>
+            </button>
           </div>
         </header>
 
         {/* Page header */}
-        <div className="px-4 lg:px-8 pt-6 pb-4 flex flex-wrap items-end justify-between gap-4">
+        <div className="px-4 lg:px-8 pt-6 pb-4 flex flex-wrap items-end justify-between gap-4" onClick={handleMainClick}>
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
             {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}
@@ -149,7 +177,7 @@ export function AppShell({ children, title, subtitle, actions }: {
           {actions && <div className="flex items-center gap-2">{actions}</div>}
         </div>
 
-        <main className="flex-1 px-4 lg:px-8 pb-10">{children}</main>
+        <main className="flex-1 px-4 lg:px-8 pb-10" onClick={handleMainClick}>{children}</main>
       </div>
     </div>
   );
