@@ -142,30 +142,34 @@ export function AppShell({ children, title, subtitle, actions }: {
           </div>
           <div className="flex-1 md:hidden" />
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" className="gap-1.5 h-9">
+            <Button variant="ghost" size="sm" className="gap-1.5 h-9"
+              onClick={() => toast("Language", { description: "Switch language: EN · AR · FR · ES" })}>
               <Globe className="h-4 w-4" /> <span className="hidden sm:inline text-xs">EN</span>
             </Button>
             <Button variant="ghost" size="icon" className="h-9 w-9" onClick={toggleDark}>
               {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
-            <Button variant="ghost" size="icon" className="h-9 w-9 relative">
+            <Button variant="ghost" size="icon" className="h-9 w-9 relative"
+              onClick={() => toast.info("3 new notifications", { description: "Permit PTW-1042 awaiting your approval." })}>
               <Bell className="h-4 w-4" />
               <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-destructive" />
             </Button>
-            <div className="ml-2 flex items-center gap-2 pl-3 border-l border-border">
+            <button
+              onClick={() => toast("Adam Reed", { description: "QEHS Manager · View profile & sign out" })}
+              className="ml-2 flex items-center gap-2 pl-3 border-l border-border hover:opacity-80 transition-opacity">
               <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-xs font-semibold">
                 AR
               </div>
-              <div className="hidden sm:block leading-tight">
+              <div className="hidden sm:block leading-tight text-left">
                 <div className="text-sm font-medium">Adam Reed</div>
                 <div className="text-[11px] text-muted-foreground">QEHS Manager</div>
               </div>
-            </div>
+            </button>
           </div>
         </header>
 
         {/* Page header */}
-        <div className="px-4 lg:px-8 pt-6 pb-4 flex flex-wrap items-end justify-between gap-4">
+        <div className="px-4 lg:px-8 pt-6 pb-4 flex flex-wrap items-end justify-between gap-4" onClick={handleMainClick}>
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
             {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}
