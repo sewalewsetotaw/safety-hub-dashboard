@@ -9,8 +9,86 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrainingRouteImport } from './routes/training'
+import { Route as SubcontractorsRouteImport } from './routes/subcontractors'
+import { Route as RiskRouteImport } from './routes/risk'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as PtwRouteImport } from './routes/ptw'
+import { Route as JourneyRouteImport } from './routes/journey'
+import { Route as InspectionsRouteImport } from './routes/inspections'
+import { Route as IncidentsRouteImport } from './routes/incidents'
+import { Route as FleetRouteImport } from './routes/fleet'
+import { Route as EnvironmentalRouteImport } from './routes/environmental'
+import { Route as ComplianceRouteImport } from './routes/compliance'
+import { Route as AuditsRouteImport } from './routes/audits'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 
+const TrainingRoute = TrainingRouteImport.update({
+  id: '/training',
+  path: '/training',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SubcontractorsRoute = SubcontractorsRouteImport.update({
+  id: '/subcontractors',
+  path: '/subcontractors',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RiskRoute = RiskRouteImport.update({
+  id: '/risk',
+  path: '/risk',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PtwRoute = PtwRouteImport.update({
+  id: '/ptw',
+  path: '/ptw',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JourneyRoute = JourneyRouteImport.update({
+  id: '/journey',
+  path: '/journey',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InspectionsRoute = InspectionsRouteImport.update({
+  id: '/inspections',
+  path: '/inspections',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IncidentsRoute = IncidentsRouteImport.update({
+  id: '/incidents',
+  path: '/incidents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FleetRoute = FleetRouteImport.update({
+  id: '/fleet',
+  path: '/fleet',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EnvironmentalRoute = EnvironmentalRouteImport.update({
+  id: '/environmental',
+  path: '/environmental',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComplianceRoute = ComplianceRouteImport.update({
+  id: '/compliance',
+  path: '/compliance',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuditsRoute = AuditsRouteImport.update({
+  id: '/audits',
+  path: '/audits',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +97,214 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/audits': typeof AuditsRoute
+  '/compliance': typeof ComplianceRoute
+  '/environmental': typeof EnvironmentalRoute
+  '/fleet': typeof FleetRoute
+  '/incidents': typeof IncidentsRoute
+  '/inspections': typeof InspectionsRoute
+  '/journey': typeof JourneyRoute
+  '/ptw': typeof PtwRoute
+  '/reports': typeof ReportsRoute
+  '/risk': typeof RiskRoute
+  '/subcontractors': typeof SubcontractorsRoute
+  '/training': typeof TrainingRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/audits': typeof AuditsRoute
+  '/compliance': typeof ComplianceRoute
+  '/environmental': typeof EnvironmentalRoute
+  '/fleet': typeof FleetRoute
+  '/incidents': typeof IncidentsRoute
+  '/inspections': typeof InspectionsRoute
+  '/journey': typeof JourneyRoute
+  '/ptw': typeof PtwRoute
+  '/reports': typeof ReportsRoute
+  '/risk': typeof RiskRoute
+  '/subcontractors': typeof SubcontractorsRoute
+  '/training': typeof TrainingRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/audits': typeof AuditsRoute
+  '/compliance': typeof ComplianceRoute
+  '/environmental': typeof EnvironmentalRoute
+  '/fleet': typeof FleetRoute
+  '/incidents': typeof IncidentsRoute
+  '/inspections': typeof InspectionsRoute
+  '/journey': typeof JourneyRoute
+  '/ptw': typeof PtwRoute
+  '/reports': typeof ReportsRoute
+  '/risk': typeof RiskRoute
+  '/subcontractors': typeof SubcontractorsRoute
+  '/training': typeof TrainingRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/audits'
+    | '/compliance'
+    | '/environmental'
+    | '/fleet'
+    | '/incidents'
+    | '/inspections'
+    | '/journey'
+    | '/ptw'
+    | '/reports'
+    | '/risk'
+    | '/subcontractors'
+    | '/training'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/admin'
+    | '/audits'
+    | '/compliance'
+    | '/environmental'
+    | '/fleet'
+    | '/incidents'
+    | '/inspections'
+    | '/journey'
+    | '/ptw'
+    | '/reports'
+    | '/risk'
+    | '/subcontractors'
+    | '/training'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/audits'
+    | '/compliance'
+    | '/environmental'
+    | '/fleet'
+    | '/incidents'
+    | '/inspections'
+    | '/journey'
+    | '/ptw'
+    | '/reports'
+    | '/risk'
+    | '/subcontractors'
+    | '/training'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
+  AuditsRoute: typeof AuditsRoute
+  ComplianceRoute: typeof ComplianceRoute
+  EnvironmentalRoute: typeof EnvironmentalRoute
+  FleetRoute: typeof FleetRoute
+  IncidentsRoute: typeof IncidentsRoute
+  InspectionsRoute: typeof InspectionsRoute
+  JourneyRoute: typeof JourneyRoute
+  PtwRoute: typeof PtwRoute
+  ReportsRoute: typeof ReportsRoute
+  RiskRoute: typeof RiskRoute
+  SubcontractorsRoute: typeof SubcontractorsRoute
+  TrainingRoute: typeof TrainingRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/training': {
+      id: '/training'
+      path: '/training'
+      fullPath: '/training'
+      preLoaderRoute: typeof TrainingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/subcontractors': {
+      id: '/subcontractors'
+      path: '/subcontractors'
+      fullPath: '/subcontractors'
+      preLoaderRoute: typeof SubcontractorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/risk': {
+      id: '/risk'
+      path: '/risk'
+      fullPath: '/risk'
+      preLoaderRoute: typeof RiskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ptw': {
+      id: '/ptw'
+      path: '/ptw'
+      fullPath: '/ptw'
+      preLoaderRoute: typeof PtwRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/journey': {
+      id: '/journey'
+      path: '/journey'
+      fullPath: '/journey'
+      preLoaderRoute: typeof JourneyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inspections': {
+      id: '/inspections'
+      path: '/inspections'
+      fullPath: '/inspections'
+      preLoaderRoute: typeof InspectionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/incidents': {
+      id: '/incidents'
+      path: '/incidents'
+      fullPath: '/incidents'
+      preLoaderRoute: typeof IncidentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fleet': {
+      id: '/fleet'
+      path: '/fleet'
+      fullPath: '/fleet'
+      preLoaderRoute: typeof FleetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/environmental': {
+      id: '/environmental'
+      path: '/environmental'
+      fullPath: '/environmental'
+      preLoaderRoute: typeof EnvironmentalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compliance': {
+      id: '/compliance'
+      path: '/compliance'
+      fullPath: '/compliance'
+      preLoaderRoute: typeof ComplianceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/audits': {
+      id: '/audits'
+      path: '/audits'
+      fullPath: '/audits'
+      preLoaderRoute: typeof AuditsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,6 +317,19 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
+  AuditsRoute: AuditsRoute,
+  ComplianceRoute: ComplianceRoute,
+  EnvironmentalRoute: EnvironmentalRoute,
+  FleetRoute: FleetRoute,
+  IncidentsRoute: IncidentsRoute,
+  InspectionsRoute: InspectionsRoute,
+  JourneyRoute: JourneyRoute,
+  PtwRoute: PtwRoute,
+  ReportsRoute: ReportsRoute,
+  RiskRoute: RiskRoute,
+  SubcontractorsRoute: SubcontractorsRoute,
+  TrainingRoute: TrainingRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
