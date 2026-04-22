@@ -12,6 +12,13 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
+import { RequireAuth } from "@/components/qehs/RequireAuth";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
+  DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { LogOut, UserCircle2 } from "lucide-react";
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -30,13 +37,17 @@ const NAV = [
   { to: "/admin", label: "Admin Settings", icon: Settings },
 ] as const;
 
-export function AppShell({ children, title, subtitle, actions }: {
+function AppShellInner({ children, title, subtitle, actions }: {
   children: ReactNode; title: string; subtitle?: string; actions?: ReactNode;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dark, setDark] = useState(false);
   const location = useLocation();
+  const { user, signOut } = useAuth();
+  const initials = (user?.user_metadata?.full_name || user?.email || "U")
+    .split(/[\s@]/).filter(Boolean).slice(0, 2).map((s: string) => s[0]?.toUpperCase()).join("");
+  const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
 
   const toggleDark = () => {
     document.documentElement.classList.toggle("dark");
@@ -154,17 +165,35 @@ export function AppShell({ children, title, subtitle, actions }: {
               <Bell className="h-4 w-4" />
               <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-destructive" />
             </Button>
-            <button
-              onClick={() => toast("Adam Reed", { description: "QEHS Manager · View profile & sign out" })}
-              className="ml-2 flex items-center gap-2 pl-3 border-l border-border hover:opacity-80 transition-opacity">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-xs font-semibold">
-                AR
-              </div>
-              <div className="hidden sm:block leading-tight text-left">
-                <div className="text-sm font-medium">Adam Reed</div>
-                <div className="text-[11px] text-muted-foreground">QEHS Manager</div>
-              </div>
-            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="ml-2 flex items-center gap-2 pl-3 border-l border-border hover:opacity-80 transition-opacity">
+                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-xs font-semibold">
+                    {initials || "U"}
+                  </div>
+                  <div className="hidden sm:block leading-tight text-left">
+                    <div className="text-sm font-medium truncate max-w-[140px]">{displayName}</div>
+                    <div className="text-[11px] text-muted-foreground">QEHS User</div>
+                  </div>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="text-sm font-medium">{displayName}</div>
+                  <div className="text-xs text-muted-foreground truncate">{user?.email}</div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem data-toast-handled="1">
+                  <UserCircle2 className="h-4 w-4 mr-2" /> Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  data-toast-handled="1"
+                  onClick={async () => { await signOut(); toast.success("Signed out"); }}
+                  className="text-destructive focus:text-destructive">
+                  <LogOut className="h-4 w-4 mr-2" /> Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
@@ -183,7 +212,15 @@ export function AppShell({ children, title, subtitle, actions }: {
   );
 }
 
-export function StatusBadge({ status }: { status: "active" | "grounded" | "open" | "in-progress" | "closed" | "overdue" | "pending" | "approved" | "rejected" | "expired" | "valid" }) {
+export function AppShell(props: { children: ReactNode; title: string; subtitle?: string; actions?: ReactNode; }) {
+  return (
+    <RequireAuth>
+      <AppShellInner {...props} />
+    </RequireAuth>
+  );
+}
+
+export function StatusBadge({ status }: { status: "active" | "grounded" | "maintenance" | "open" | "in-progress" | "closed" | "overdue" | "pending" | "approved" | "rejected" | "expired" | "valid" }) {
   const map: Record<string, string> = {
     active: "bg-success-soft text-success border-success/20",
     valid: "bg-success-soft text-success border-success/20",
@@ -195,6 +232,7 @@ export function StatusBadge({ status }: { status: "active" | "grounded" | "open"
     expired: "bg-destructive-soft text-destructive border-destructive/20",
     open: "bg-warning-soft text-warning-foreground border-warning/30",
     pending: "bg-warning-soft text-warning-foreground border-warning/30",
+    maintenance: "bg-warning-soft text-warning-foreground border-warning/30",
     "in-progress": "bg-info-soft text-info border-info/20",
   };
   return (
@@ -202,7 +240,7 @@ export function StatusBadge({ status }: { status: "active" | "grounded" | "open"
       <span className={cn("h-1.5 w-1.5 rounded-full mr-1.5", {
         "bg-success": ["active","valid","closed","approved"].includes(status),
         "bg-destructive": ["grounded","overdue","rejected","expired"].includes(status),
-        "bg-warning": ["open","pending"].includes(status),
+        "bg-warning": ["open","pending","maintenance"].includes(status),
         "bg-info": status === "in-progress",
       })} />
       {status.replace("-", " ")}

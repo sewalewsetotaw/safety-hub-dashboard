@@ -20,6 +20,7 @@ import { Route as IncidentsRouteImport } from './routes/incidents'
 import { Route as FleetRouteImport } from './routes/fleet'
 import { Route as EnvironmentalRouteImport } from './routes/environmental'
 import { Route as ComplianceRouteImport } from './routes/compliance'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuditsRouteImport } from './routes/audits'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -79,6 +80,11 @@ const ComplianceRoute = ComplianceRouteImport.update({
   path: '/compliance',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuditsRoute = AuditsRouteImport.update({
   id: '/audits',
   path: '/audits',
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/audits': typeof AuditsRoute
+  '/auth': typeof AuthRoute
   '/compliance': typeof ComplianceRoute
   '/environmental': typeof EnvironmentalRoute
   '/fleet': typeof FleetRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/audits': typeof AuditsRoute
+  '/auth': typeof AuthRoute
   '/compliance': typeof ComplianceRoute
   '/environmental': typeof EnvironmentalRoute
   '/fleet': typeof FleetRoute
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/audits': typeof AuditsRoute
+  '/auth': typeof AuthRoute
   '/compliance': typeof ComplianceRoute
   '/environmental': typeof EnvironmentalRoute
   '/fleet': typeof FleetRoute
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/audits'
+    | '/auth'
     | '/compliance'
     | '/environmental'
     | '/fleet'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/audits'
+    | '/auth'
     | '/compliance'
     | '/environmental'
     | '/fleet'
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/audits'
+    | '/auth'
     | '/compliance'
     | '/environmental'
     | '/fleet'
@@ -199,6 +211,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AuditsRoute: typeof AuditsRoute
+  AuthRoute: typeof AuthRoute
   ComplianceRoute: typeof ComplianceRoute
   EnvironmentalRoute: typeof EnvironmentalRoute
   FleetRoute: typeof FleetRoute
@@ -291,6 +304,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComplianceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/audits': {
       id: '/audits'
       path: '/audits'
@@ -319,6 +339,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AuditsRoute: AuditsRoute,
+  AuthRoute: AuthRoute,
   ComplianceRoute: ComplianceRoute,
   EnvironmentalRoute: EnvironmentalRoute,
   FleetRoute: FleetRoute,
@@ -334,12 +355,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
