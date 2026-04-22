@@ -14,7 +14,204 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      incidents: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          incident_type: string
+          location: string | null
+          occurred_at: string
+          severity: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          incident_type?: string
+          location?: string | null
+          occurred_at?: string
+          severity?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          incident_type?: string
+          location?: string | null
+          occurred_at?: string
+          severity?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      inspections: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          due_date: string | null
+          id: string
+          inspection_type: string
+          location: string | null
+          notes: string | null
+          score: number | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          due_date?: string | null
+          id?: string
+          inspection_type?: string
+          location?: string | null
+          notes?: string | null
+          score?: number | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          due_date?: string | null
+          id?: string
+          inspection_type?: string
+          location?: string | null
+          notes?: string | null
+          score?: number | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      permits: {
+        Row: {
+          contractor: string | null
+          created_at: string
+          created_by: string
+          id: string
+          location: string | null
+          permit_number: string
+          permit_type: string
+          status: string
+          title: string
+          updated_at: string
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          contractor?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          location?: string | null
+          permit_number: string
+          permit_type?: string
+          status?: string
+          title: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          contractor?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          location?: string | null
+          permit_number?: string
+          permit_type?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      vehicles: {
+        Row: {
+          asset_id: string
+          created_at: string
+          created_by: string
+          driver: string | null
+          id: string
+          last_inspection: string | null
+          site: string | null
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          created_by: string
+          driver?: string | null
+          id?: string
+          last_inspection?: string | null
+          site?: string | null
+          status?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          created_by?: string
+          driver?: string | null
+          id?: string
+          last_inspection?: string | null
+          site?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
