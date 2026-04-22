@@ -220,7 +220,7 @@ export function AppShell(props: { children: ReactNode; title: string; subtitle?:
   );
 }
 
-export function StatusBadge({ status }: { status: "active" | "grounded" | "open" | "in-progress" | "closed" | "overdue" | "pending" | "approved" | "rejected" | "expired" | "valid" }) {
+export function StatusBadge({ status }: { status: "active" | "grounded" | "maintenance" | "open" | "in-progress" | "closed" | "overdue" | "pending" | "approved" | "rejected" | "expired" | "valid" }) {
   const map: Record<string, string> = {
     active: "bg-success-soft text-success border-success/20",
     valid: "bg-success-soft text-success border-success/20",
@@ -232,6 +232,7 @@ export function StatusBadge({ status }: { status: "active" | "grounded" | "open"
     expired: "bg-destructive-soft text-destructive border-destructive/20",
     open: "bg-warning-soft text-warning-foreground border-warning/30",
     pending: "bg-warning-soft text-warning-foreground border-warning/30",
+    maintenance: "bg-warning-soft text-warning-foreground border-warning/30",
     "in-progress": "bg-info-soft text-info border-info/20",
   };
   return (
@@ -239,7 +240,7 @@ export function StatusBadge({ status }: { status: "active" | "grounded" | "open"
       <span className={cn("h-1.5 w-1.5 rounded-full mr-1.5", {
         "bg-success": ["active","valid","closed","approved"].includes(status),
         "bg-destructive": ["grounded","overdue","rejected","expired"].includes(status),
-        "bg-warning": ["open","pending"].includes(status),
+        "bg-warning": ["open","pending","maintenance"].includes(status),
         "bg-info": status === "in-progress",
       })} />
       {status.replace("-", " ")}
