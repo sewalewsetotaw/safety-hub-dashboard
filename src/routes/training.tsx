@@ -142,7 +142,7 @@ function Training() {
       <CrudDialog open={dialogOpen} onOpenChange={setDialogOpen}
         title={editing ? "Edit Training Record" : "Add Training Record"}
         onSubmit={handleSubmit} busy={busy} submitLabel={editing ? "Save changes" : "Create"}>
-        <div class="grid grid-cols-2 gap-3"></div>
+
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label htmlFor="employee_name">Employee</Label>
