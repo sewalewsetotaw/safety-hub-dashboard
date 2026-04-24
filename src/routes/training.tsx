@@ -1,83 +1,194 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AppShell } from "@/components/qehs/AppShell";
+import { useEffect, useState } from "react";
+import { z } from "zod";
+import { toast } from "sonner";
+import { AppShell, StatusBadge } from "@/components/qehs/AppShell";
 import { Section } from "@/components/qehs/widgets/Section";
 import { KpiCard } from "@/components/qehs/widgets/KpiCard";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, Award, AlertTriangle, Users, Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CrudDialog, ConfirmDeleteDialog } from "@/components/qehs/CrudDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { GraduationCap, CheckCircle2, AlertCircle, Calendar, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import type { Database } from "@/integrations/supabase/types";
+
+type Record = Database["public"]["Tables"]["training_records"]["Row"];
 
 export const Route = createFileRoute("/training")({
-  head: () => ({ meta: [{ title: "Training & Competency — QEHS Live" }] }),
+  head: () => ({ meta: [{ title: "Training — QEHS Live" }] }),
   component: Training,
 });
 
-const employees = [
-  { name: "Ahmed Al-Saud", role: "Driver" },
-  { name: "Mei Tanaka", role: "Operator" },
-  { name: "Carlos Mendez", role: "Supervisor" },
-  { name: "Priya Singh", role: "Technician" },
-  { name: "Liam O'Brien", role: "Driver" },
-  { name: "Fatima Noor", role: "Engineer" },
-];
-const courses = ["H2S", "Heights", "Defensive Driving", "First Aid", "Confined Space", "LOTO"];
-// 0=valid, 1=expiring, 2=expired
-const matrix = [
-  [0,0,2,0,1,0],[0,1,0,0,0,2],[0,0,0,1,0,0],[1,0,0,0,2,0],[0,0,0,0,0,0],[2,0,1,0,0,0],
-];
-const cellColor = (v:number) => v===0 ? "bg-success/80 text-success-foreground" : v===1 ? "bg-warning/80 text-warning-foreground" : "bg-destructive/80 text-destructive-foreground";
-const cellLabel = (v:number) => v===0 ? "✓" : v===1 ? "!" : "✕";
+const schema = z.object({
+  employee_name: z.string().trim().min(1).max(100),
+  course: z.string().trim().min(1).max(200),
+  provider: z.string().trim().max(100).optional().nullable(),
+  status: z.enum(["pending", "in-progress", "approved", "expired"]),
+  completed_at: z.string().optional().nullable(),
+  expires_at: z.string().optional().nullable(),
+  score: z.coerce.number().min(0).max(100).optional().nullable(),
+});
 
 function Training() {
+  const { user } = useAuth();
+  const [rows, setRows] = useState<Record[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<Record | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from("training_records").select("*").order("created_at", { ascending: false });
+    if (error) toast.error(error.message); else setRows(data ?? []);
+    setLoading(false);
+  };
+  useEffect(() => { void load(); }, []);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!user) return toast.error("Not signed in");
+    const fd = new FormData(e.currentTarget);
+    const score = fd.get("score");
+    const parsed = schema.safeParse({
+      employee_name: fd.get("employee_name"), course: fd.get("course"),
+      provider: fd.get("provider") || null, status: fd.get("status"),
+      completed_at: fd.get("completed_at") || null,
+      expires_at: fd.get("expires_at") || null,
+      score: score ? score : null,
+    });
+    if (!parsed.success) return toast.error(parsed.error.issues[0].message);
+    setBusy(true);
+    if (editing) {
+      const { error } = await supabase.from("training_records").update(parsed.data).eq("id", editing.id);
+      setBusy(false);
+      if (error) return toast.error(error.message);
+      toast.success("Record updated");
+    } else {
+      const { error } = await supabase.from("training_records").insert({ ...parsed.data, created_by: user.id });
+      setBusy(false);
+      if (error) return toast.error(error.message);
+      toast.success("Training record added");
+    }
+    setDialogOpen(false);
+    void load();
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    setBusy(true);
+    const { error } = await supabase.from("training_records").delete().eq("id", deleteId);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Deleted");
+    setDeleteId(null);
+    void load();
+  };
+
+  const counts = {
+    completed: rows.filter(r => r.status === "approved").length,
+    upcoming: rows.filter(r => r.status === "pending" || r.status === "in-progress").length,
+    expired: rows.filter(r => r.status === "expired").length,
+  };
+
   return (
-    <AppShell title="Training & Competency" subtitle="Workforce certification matrix and expiry tracking"
-      actions={<Button size="sm" className="gap-1.5"><Plus className="h-4 w-4"/>Assign Training</Button>}>
+    <AppShell title="Training & Competency" subtitle="Certifications, refreshers, and qualifications"
+      actions={<Button size="sm" className="gap-1.5" onClick={() => { setEditing(null); setDialogOpen(true); }} data-toast-handled="1"><Plus className="h-4 w-4"/>Add Record</Button>}>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <KpiCard label="Total Employees" value={1284} icon={Users} tone="primary"/>
-        <KpiCard label="Compliant" value="91%" icon={Award} tone="success"/>
-        <KpiCard label="Expiring 30d" value={48} icon={AlertTriangle} tone="warning"/>
-        <KpiCard label="Expired" value={17} icon={GraduationCap} tone="destructive"/>
+        <KpiCard label="Completed" value={counts.completed} icon={CheckCircle2} tone="success"/>
+        <KpiCard label="In Progress" value={counts.upcoming} icon={Calendar} tone="warning"/>
+        <KpiCard label="Expired" value={counts.expired} icon={AlertCircle} tone="destructive"/>
+        <KpiCard label="Total" value={rows.length} icon={GraduationCap} tone="primary"/>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Section title="Employee Profile" description="Ahmed Al-Saud — Driver">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="h-14 w-14 rounded-full bg-gradient-to-br from-primary to-primary/60 text-primary-foreground flex items-center justify-center font-semibold">AS</div>
-            <div>
-              <div className="font-semibold">Ahmed Al-Saud</div>
-              <div className="text-xs text-muted-foreground">EMP-00421 · Logistics</div>
-            </div>
-          </div>
-          <div className="flex gap-1 border-b border-border mb-3 text-xs">
-            {["Overview","Certs","History","Documents"].map((t,i)=>(
-              <button key={t} className={`px-3 py-2 -mb-px border-b-2 ${i===0?"border-primary text-primary font-medium":"border-transparent text-muted-foreground"}`}>{t}</button>
-            ))}
-          </div>
-          <dl className="text-sm space-y-2">
-            <div className="flex justify-between"><dt className="text-muted-foreground">Hire Date</dt><dd>2021-03-14</dd></div>
-            <div className="flex justify-between"><dt className="text-muted-foreground">Site</dt><dd>Jeddah Port</dd></div>
-            <div className="flex justify-between"><dt className="text-muted-foreground">License</dt><dd>HGV Class A</dd></div>
-            <div className="flex justify-between"><dt className="text-muted-foreground">Compliance</dt><dd className="font-semibold text-success">94%</dd></div>
-          </dl>
-        </Section>
+      <Section title="Training Records">
+        <div className="overflow-x-auto -mx-5">
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-xs text-muted-foreground uppercase tracking-wider border-b border-border">
+              <th className="px-5 py-2.5 font-medium">Employee</th><th className="py-2.5 font-medium">Course</th>
+              <th className="py-2.5 font-medium">Provider</th><th className="py-2.5 font-medium">Completed</th>
+              <th className="py-2.5 font-medium">Expires</th><th className="py-2.5 font-medium">Score</th>
+              <th className="py-2.5 font-medium">Status</th><th className="px-5 py-2.5 font-medium text-right">Actions</th>
+            </tr></thead>
+            <tbody className="divide-y divide-border">
+              {loading ? (
+                <tr><td colSpan={8} className="text-center py-10 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin inline"/></td></tr>
+              ) : rows.length === 0 ? (
+                <tr><td colSpan={8} className="text-center py-10 text-muted-foreground text-sm">No training records yet.</td></tr>
+              ) : rows.map(r => (
+                <tr key={r.id} className="hover:bg-muted/40">
+                  <td className="px-5 py-3 font-medium">{r.employee_name}</td>
+                  <td className="py-3">{r.course}</td>
+                  <td className="py-3 text-muted-foreground">{r.provider ?? "—"}</td>
+                  <td className="py-3 text-muted-foreground">{r.completed_at ?? "—"}</td>
+                  <td className="py-3 text-muted-foreground">{r.expires_at ?? "—"}</td>
+                  <td className="py-3 font-medium">{r.score ?? "—"}</td>
+                  <td className="py-3"><StatusBadge status={r.status as "pending" | "in-progress" | "approved" | "expired"}/></td>
+                  <td className="px-5 py-3 text-right">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditing(r); setDialogOpen(true); }} data-toast-handled="1"><Pencil className="h-4 w-4"/></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteId(r.id)} data-toast-handled="1"><Trash2 className="h-4 w-4"/></Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Section>
 
-        <Section title="Training Matrix" className="lg:col-span-2"
-          action={<div className="flex items-center gap-3 text-xs"><span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-success/80"/>Valid</span><span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-warning/80"/>Expiring</span><span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-destructive/80"/>Expired</span></div>}>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead><tr><th className="text-left pb-2 font-medium">Employee</th>{courses.map(c=><th key={c} className="px-2 pb-2 font-medium text-muted-foreground">{c}</th>)}</tr></thead>
-              <tbody>
-                {employees.map((e,i)=>(
-                  <tr key={i} className="border-t border-border">
-                    <td className="py-2 pr-2"><div className="font-medium">{e.name}</div><div className="text-[10px] text-muted-foreground">{e.role}</div></td>
-                    {matrix[i].map((v,j)=>(
-                      <td key={j} className="px-1 py-2"><div className={`h-8 w-full rounded flex items-center justify-center font-semibold ${cellColor(v)}`}>{cellLabel(v)}</div></td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <CrudDialog open={dialogOpen} onOpenChange={setDialogOpen}
+        title={editing ? "Edit Training Record" : "Add Training Record"}
+        onSubmit={handleSubmit} busy={busy} submitLabel={editing ? "Save changes" : "Create"}>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="employee_name">Employee</Label>
+            <Input id="employee_name" name="employee_name" required defaultValue={editing?.employee_name ?? ""} placeholder="M. Hassan"/>
           </div>
-        </Section>
-      </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="course">Course</Label>
+            <Input id="course" name="course" required defaultValue={editing?.course ?? ""} placeholder="Working at Heights"/>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="provider">Provider</Label>
+            <Input id="provider" name="provider" defaultValue={editing?.provider ?? ""} placeholder="NEBOSH"/>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="status">Status</Label>
+            <Select name="status" defaultValue={editing?.status ?? "pending"}>
+              <SelectTrigger id="status"><SelectValue/></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="in-progress">In progress</SelectItem>
+                <SelectItem value="approved">Completed</SelectItem>
+                <SelectItem value="expired">Expired</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="completed_at">Completed</Label>
+            <Input id="completed_at" name="completed_at" type="date" defaultValue={editing?.completed_at ?? ""}/>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="expires_at">Expires</Label>
+            <Input id="expires_at" name="expires_at" type="date" defaultValue={editing?.expires_at ?? ""}/>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="score">Score</Label>
+            <Input id="score" name="score" type="number" min="0" max="100" defaultValue={editing?.score ?? ""}/>
+          </div>
+        </div>
+      </CrudDialog>
+
+      <ConfirmDeleteDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}
+        onConfirm={handleDelete} busy={busy} title="Delete training record?"/>
     </AppShell>
   );
 }

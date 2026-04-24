@@ -14,6 +14,135 @@ export type Database = {
   }
   public: {
     Tables: {
+      audits: {
+        Row: {
+          audit_type: string
+          auditor: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          findings_count: number | null
+          id: string
+          planned_date: string | null
+          scope: string | null
+          score: number | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          audit_type?: string
+          auditor?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          findings_count?: number | null
+          id?: string
+          planned_date?: string | null
+          scope?: string | null
+          score?: number | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          audit_type?: string
+          auditor?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          findings_count?: number | null
+          id?: string
+          planned_date?: string | null
+          scope?: string | null
+          score?: number | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      compliance_items: {
+        Row: {
+          clause: string | null
+          created_at: string
+          created_by: string
+          due_date: string | null
+          evidence_url: string | null
+          framework: string
+          id: string
+          owner: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          clause?: string | null
+          created_at?: string
+          created_by: string
+          due_date?: string | null
+          evidence_url?: string | null
+          framework?: string
+          id?: string
+          owner?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          clause?: string | null
+          created_at?: string
+          created_by?: string
+          due_date?: string | null
+          evidence_url?: string | null
+          framework?: string
+          id?: string
+          owner?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      environmental_readings: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          metric: string
+          notes: string | null
+          recorded_at: string
+          site: string
+          unit: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          metric: string
+          notes?: string | null
+          recorded_at?: string
+          site: string
+          unit?: string
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          metric?: string
+          notes?: string | null
+          recorded_at?: string
+          site?: string
+          unit?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: []
+      }
       incidents: {
         Row: {
           created_at: string
@@ -101,6 +230,51 @@ export type Database = {
         }
         Relationships: []
       }
+      journey_trips: {
+        Row: {
+          created_at: string
+          created_by: string
+          destination: string
+          distance_km: number | null
+          driver: string
+          eta: string | null
+          id: string
+          origin: string
+          status: string
+          trip_number: string
+          updated_at: string
+          vehicle: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          destination: string
+          distance_km?: number | null
+          driver: string
+          eta?: string | null
+          id?: string
+          origin: string
+          status?: string
+          trip_number: string
+          updated_at?: string
+          vehicle?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          destination?: string
+          distance_km?: number | null
+          driver?: string
+          eta?: string | null
+          id?: string
+          origin?: string
+          status?: string
+          trip_number?: string
+          updated_at?: string
+          vehicle?: string | null
+        }
+        Relationships: []
+      }
       permits: {
         Row: {
           contractor: string | null
@@ -169,6 +343,135 @@ export type Database = {
           full_name?: string | null
           id?: string
           role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      risk_register: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string
+          id: string
+          impact: number
+          likelihood: number
+          mitigation: string | null
+          owner: string | null
+          score: number | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by: string
+          id?: string
+          impact?: number
+          likelihood?: number
+          mitigation?: string | null
+          owner?: string | null
+          score?: number | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          impact?: number
+          likelihood?: number
+          mitigation?: string | null
+          owner?: string | null
+          score?: number | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subcontractors: {
+        Row: {
+          company_name: string
+          contact_email: string | null
+          contact_name: string | null
+          created_at: string
+          created_by: string
+          id: string
+          prequalified_until: string | null
+          safety_score: number | null
+          status: string
+          trade: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_name: string
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          prequalified_until?: string | null
+          safety_score?: number | null
+          status?: string
+          trade?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string
+          contact_email?: string | null
+          contact_name?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          prequalified_until?: string | null
+          safety_score?: number | null
+          status?: string
+          trade?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      training_records: {
+        Row: {
+          completed_at: string | null
+          course: string
+          created_at: string
+          created_by: string
+          employee_name: string
+          expires_at: string | null
+          id: string
+          provider: string | null
+          score: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          course: string
+          created_at?: string
+          created_by: string
+          employee_name: string
+          expires_at?: string | null
+          id?: string
+          provider?: string | null
+          score?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          course?: string
+          created_at?: string
+          created_by?: string
+          employee_name?: string
+          expires_at?: string | null
+          id?: string
+          provider?: string | null
+          score?: number | null
+          status?: string
           updated_at?: string
         }
         Relationships: []
