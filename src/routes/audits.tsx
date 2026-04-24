@@ -127,7 +127,7 @@ function Audits() {
                   <td className="py-3 text-muted-foreground">{a.audit_type}</td>
                   <td className="py-3">{a.auditor ?? "—"}</td>
                   <td className="py-3 text-muted-foreground">{a.planned_date ?? "—"}</td>
-                  <td className="py-3"><StatusBadge status={a.status as "planned" | "in-progress" | "closed" | "overdue"}/></td>
+                  <td className="py-3"><StatusBadge status={(a.status === "planned" ? "pending" : a.status) as "pending" | "in-progress" | "closed" | "overdue"}/></td>
                   <td className="px-5 py-3 text-right">
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(a)} data-toast-handled="1"><Pencil className="h-4 w-4"/></Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeleteId(a.id)} data-toast-handled="1"><Trash2 className="h-4 w-4"/></Button>
