@@ -10,7 +10,7 @@ export const Route = createFileRoute("/reports")({
 });
 
 const reports = [
-  { name:"Monthly HSE Performance", desc:"TRIR, LTIFR, near-miss trends", icon: LineChart },
+  { name:"Monthly HSE Performance", desc:"LTI, LTIFR, near-miss trends", icon: LineChart },
   { name:"Incident Root Cause Analysis", desc:"Pareto by category & site", icon: BarChart3 },
   { name:"Compliance Scorecard", desc:"Vendor & site compliance", icon: PieChart },
   { name:"Training Compliance", desc:"Matrix completion by team", icon: FileBarChart },
