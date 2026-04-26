@@ -74,6 +74,27 @@ function Dashboard() {
     return Math.max(0, Math.floor((Date.now() - last) / 86400000));
   }, [incidents]);
 
+  const handleExport = () => {
+    const rows = [
+      ["Metric", "Value"],
+      ["LTI Count", String(ltiCount)],
+      ["Days Since Last LTI", daysSinceLTI === null ? "N/A" : String(daysSinceLTI)],
+      ["CAPA Closure %", String(capaClosure)],
+      ["Active Vehicles", String(activeVehicles)],
+      ["Open Risks", String(openRisks)],
+    ];
+    const csv = rows.map(r => r.map(c => `"${c.replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `qehs-dashboard-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
   // Incident trend by month (last 12)
   const trendData = useMemo(() => {
     const now = new Date();
