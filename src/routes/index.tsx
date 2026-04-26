@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppShell, StatusBadge } from "@/components/qehs/AppShell";
 import { KpiCard } from "@/components/qehs/widgets/KpiCard";
 import { Section } from "@/components/qehs/widgets/Section";
@@ -29,6 +29,7 @@ type Training = { id: string; employee_name: string; course: string; expires_at:
 type Inspection = { id: string; title: string; status: string; due_date: string | null };
 
 function Dashboard() {
+  const navigate = useNavigate();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [risks, setRisks] = useState<Risk[]>([]);
@@ -61,7 +62,38 @@ function Dashboard() {
   const openRisks = risks.filter(r => r.status !== "closed" && r.status !== "mitigated").length;
   const closedAudits = audits.filter(a => a.status === "closed" || a.status === "completed").length;
   const capaClosure = audits.length > 0 ? Math.round((closedAudits / audits.length) * 100) : 0;
-  const ltifr = incidents.length > 0 ? (ltiCount / incidents.length).toFixed(2) : "0.00";
+
+  // Days since last LTI
+  const daysSinceLTI = useMemo(() => {
+    const ltis = incidents
+      .filter(x => x.incident_type === "lost-time" || x.severity === "high" || x.severity === "critical")
+      .map(x => new Date(x.occurred_at).getTime())
+      .filter(t => !isNaN(t));
+    if (ltis.length === 0) return null;
+    const last = Math.max(...ltis);
+    return Math.max(0, Math.floor((Date.now() - last) / 86400000));
+  }, [incidents]);
+
+  const handleExport = () => {
+    const rows = [
+      ["Metric", "Value"],
+      ["LTI Count", String(ltiCount)],
+      ["Days Since Last LTI", daysSinceLTI === null ? "N/A" : String(daysSinceLTI)],
+      ["CAPA Closure %", String(capaClosure)],
+      ["Active Vehicles", String(activeVehicles)],
+      ["Open Risks", String(openRisks)],
+    ];
+    const csv = rows.map(r => r.map(c => `"${c.replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `qehs-dashboard-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
 
   // Incident trend by month (last 12)
   const trendData = useMemo(() => {
@@ -142,15 +174,21 @@ function Dashboard() {
       subtitle="Real-time QEHS performance across all sites"
       actions={
         <>
-          <Button variant="outline" size="sm" className="gap-1.5"><Calendar className="h-4 w-4" /> Last 30 days</Button>
-          <Button variant="outline" size="sm" className="gap-1.5"><Filter className="h-4 w-4" /> Filters</Button>
-          <Button size="sm" className="gap-1.5"><Download className="h-4 w-4" /> Export</Button>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate({ to: "/reports" })}>
+            <Calendar className="h-4 w-4" /> Last 30 days
+          </Button>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate({ to: "/reports" })}>
+            <Filter className="h-4 w-4" /> Filters
+          </Button>
+          <Button size="sm" className="gap-1.5" onClick={handleExport} data-toast-handled="1">
+            <Download className="h-4 w-4" /> Export
+          </Button>
         </>
       }
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-        <KpiCard label="LTI" value={ltiCount} icon={ShieldAlert} tone={ltiCount === 0 ? "success" : "destructive"} />
-        <KpiCard label="LTIFR" value={ltifr} icon={ShieldAlert} tone="info" />
+        <KpiCard label="LTI Count" value={ltiCount} icon={ShieldAlert} tone={ltiCount === 0 ? "success" : "destructive"} />
+        <KpiCard label="Days Since Last LTI" value={daysSinceLTI ?? "—"} suffix={daysSinceLTI !== null ? "days" : undefined} icon={ShieldAlert} tone={daysSinceLTI === null || daysSinceLTI > 30 ? "success" : daysSinceLTI > 7 ? "warning" : "destructive"} />
         <KpiCard label="CAPA Closure" value={capaClosure} suffix="%" icon={CheckCircle2} tone="primary" />
         <KpiCard label="Active Vehicles" value={activeVehicles} icon={Truck} tone="info" />
         <KpiCard label="Open Risks" value={openRisks} icon={AlertTriangle} tone="warning" />
@@ -210,7 +248,7 @@ function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Section title="Overdue CAPA" description="Action items past SLA"
-          action={<Button variant="ghost" size="sm">View all</Button>}>
+          action={<Button variant="ghost" size="sm" onClick={() => navigate({ to: "/incidents" })}>View all</Button>}>
           <div className="divide-y divide-border">
             {overdueCapa.length === 0 && <div className="text-xs text-muted-foreground py-4">No overdue items.</div>}
             {overdueCapa.map(c => (
@@ -227,7 +265,7 @@ function Dashboard() {
         </Section>
 
         <Section title="Expiring Certifications" description="Next 60 days"
-          action={<Button variant="ghost" size="sm">View all</Button>}>
+          action={<Button variant="ghost" size="sm" onClick={() => navigate({ to: "/training" })}>View all</Button>}>
           <div className="divide-y divide-border">
             {expiring.length === 0 && <div className="text-xs text-muted-foreground py-4">No certifications expiring soon.</div>}
             {expiring.map((e,i) => (
