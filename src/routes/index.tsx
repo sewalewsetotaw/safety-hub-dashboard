@@ -63,6 +63,10 @@ function Dashboard() {
   const closedAudits = audits.filter(a => a.status === "closed" || a.status === "completed").length;
   const capaClosure = audits.length > 0 ? Math.round((closedAudits / audits.length) * 100) : 0;
 
+  // LTIR = (LTI × 200,000) / hours worked. Proxy hours from active vehicles (5 workers × 2000 hrs).
+  const assumedHours = Math.max(1, (activeVehicles || 1) * 5 * 2000);
+  const ltir = ((ltiCount * 200000) / assumedHours).toFixed(2);
+
   // Days since last LTI
   const daysSinceLTI = useMemo(() => {
     const ltis = incidents
@@ -79,6 +83,7 @@ function Dashboard() {
       ["Metric", "Value"],
       ["LTI Count", String(ltiCount)],
       ["Days Since Last LTI", daysSinceLTI === null ? "N/A" : String(daysSinceLTI)],
+      ["LTIR (per 200k hrs)", String(ltir)],
       ["CAPA Closure %", String(capaClosure)],
       ["Active Vehicles", String(activeVehicles)],
       ["Open Risks", String(openRisks)],
@@ -186,9 +191,10 @@ function Dashboard() {
         </>
       }
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
         <KpiCard label="LTI Count" value={ltiCount} icon={ShieldAlert} tone={ltiCount === 0 ? "success" : "destructive"} />
         <KpiCard label="Days Since Last LTI" value={daysSinceLTI ?? "—"} suffix={daysSinceLTI !== null ? "days" : undefined} icon={ShieldAlert} tone={daysSinceLTI === null || daysSinceLTI > 30 ? "success" : daysSinceLTI > 7 ? "warning" : "destructive"} />
+        <KpiCard label="LTIR" value={ltir} suffix="/200k hrs" icon={ShieldAlert} tone={Number(ltir) === 0 ? "success" : Number(ltir) < 1 ? "warning" : "destructive"} />
         <KpiCard label="CAPA Closure" value={capaClosure} suffix="%" icon={CheckCircle2} tone="primary" />
         <KpiCard label="Active Vehicles" value={activeVehicles} icon={Truck} tone="info" />
         <KpiCard label="Open Risks" value={openRisks} icon={AlertTriangle} tone="warning" />
