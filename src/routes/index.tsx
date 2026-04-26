@@ -3,7 +3,8 @@ import { AppShell, StatusBadge } from "@/components/qehs/AppShell";
 import { KpiCard } from "@/components/qehs/widgets/KpiCard";
 import { Section } from "@/components/qehs/widgets/Section";
 import { Button } from "@/components/ui/button";
-import { Activity, AlertTriangle, CheckCircle2, Truck, ShieldAlert, Calendar, Filter, Download } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Truck, ShieldAlert, Calendar, Filter, Download } from "lucide-react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [{ title: "Dashboard — QEHS Live" }, { name: "description", content: "Executive QEHS performance overview." }] }),
@@ -11,6 +12,12 @@ export const Route = createFileRoute("/")({
 });
 
 const trendData = [12,14,9,11,16,13,18,15,12,9,7,10];
+const ltiData = [
+  { name: "Medical Treatment", value: 8, color: "hsl(var(--warning))" },
+  { name: "Restricted Work", value: 5, color: "hsl(var(--info))" },
+  { name: "Lost Time", value: 3, color: "hsl(var(--destructive))" },
+  { name: "First Aid Only", value: 14, color: "hsl(var(--success))" },
+];
 const heatmap = [
   ["Operations", 4,3,2,1,2],
   ["Logistics",  3,5,2,1,1],
@@ -41,7 +48,7 @@ function Dashboard() {
       }
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-        <KpiCard label="TRIR" value="0.42" delta="0.08" trend="down" icon={Activity} tone="success" />
+        <KpiCard label="LTI" value="3" delta="1" trend="down" icon={ShieldAlert} tone="success" />
         <KpiCard label="LTIFR" value="0.18" delta="0.02" trend="down" icon={ShieldAlert} tone="success" />
         <KpiCard label="CAPA Closure" value="87" suffix="%" delta="3.1%" trend="up" icon={CheckCircle2} tone="primary" />
         <KpiCard label="Active Vehicles" value="248" delta="12" trend="up" icon={Truck} tone="info" />
@@ -61,7 +68,23 @@ function Dashboard() {
           </div>
         </Section>
 
-        <Section title="Risk Heat Map" description="Department × Severity">
+        <Section title="LTI Breakdown" description="Lost Time Injuries by category — YTD">
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={ltiData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={2}>
+                  {ltiData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                </Pie>
+                <Tooltip contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
+                <Legend verticalAlign="bottom" height={36} iconSize={8} wrapperStyle={{ fontSize: 11 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </Section>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <Section title="Risk Heat Map" description="Department × Severity" className="lg:col-span-3">
           <div className="space-y-1.5">
             {heatmap.map((row, i) => (
               <div key={i} className="flex items-center gap-1.5">
