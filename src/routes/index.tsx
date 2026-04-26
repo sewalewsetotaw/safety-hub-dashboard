@@ -3,22 +3,38 @@ import { AppShell, StatusBadge } from "@/components/qehs/AppShell";
 import { KpiCard } from "@/components/qehs/widgets/KpiCard";
 import { Section } from "@/components/qehs/widgets/Section";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CheckCircle2, Truck, ShieldAlert, Calendar, Filter, Download, CalendarClock, Activity } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { 
+  AlertTriangle, 
+  CheckCircle2, 
+  Truck, 
+  ShieldAlert, 
+  Calendar, 
+  Filter, 
+  Download, 
+  CalendarClock, 
+  Activity,
+  ArrowRight
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
-  head: () => ({ meta: [{ title: "Dashboard — QEHS Live" }, { name: "description", content: "Executive QEHS performance overview." }] }),
+  head: () => ({ 
+    meta: [
+      { title: "Dashboard — QEHS Live" }, 
+      { name: "description", content: "Executive QEHS performance overview." }
+    ] 
+  }),
   component: Dashboard,
 });
 
+// Refined Heatmap Colors
 const heatColor = (v: number) => {
-  if (v >= 5) return "bg-destructive text-destructive-foreground";
-  if (v >= 4) return "bg-destructive/70 text-destructive-foreground";
-  if (v >= 3) return "bg-warning text-warning-foreground";
-  if (v >= 2) return "bg-warning/50 text-warning-foreground";
-  return "bg-success/40 text-success-foreground";
+  if (v === 0) return "bg-muted/20 text-muted-foreground/40";
+  if (v >= 5) return "bg-destructive text-destructive-foreground font-bold shadow-sm";
+  if (v >= 3) return "bg-orange-500/20 text-orange-700 dark:text-orange-400 border border-orange-500/20";
+  if (v >= 1) return "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border border-yellow-500/20";
+  return "bg-success/20 text-success-foreground";
 };
 
 type Incident = { id: string; title: string; severity: string; incident_type: string; status: string; occurred_at: string; location: string | null };
@@ -56,50 +72,26 @@ function Dashboard() {
     })();
   }, []);
 
-  // KPI calculations
+  // Logic Calculations
   const ltiCount = incidents.filter(x => x.incident_type === "lost-time" || x.severity === "high" || x.severity === "critical").length;
   const activeVehicles = vehicles.filter(v => v.status === "active").length;
   const openRisks = risks.filter(r => r.status !== "closed" && r.status !== "mitigated").length;
   const closedAudits = audits.filter(a => a.status === "closed" || a.status === "completed").length;
   const capaClosure = audits.length > 0 ? Math.round((closedAudits / audits.length) * 100) : 0;
-
-  // LTIR = (LTI × 200,000) / hours worked. Proxy hours from active vehicles (5 workers × 2000 hrs).
   const assumedHours = Math.max(1, (activeVehicles || 1) * 5 * 2000);
   const ltir = ((ltiCount * 200000) / assumedHours).toFixed(2);
 
-  // Days since last LTI
-  const daysSinceLTI = useMemo(() => {
-    const ltis = incidents
-      .filter(x => x.incident_type === "lost-time" || x.severity === "high" || x.severity === "critical")
-      .map(x => new Date(x.occurred_at).getTime())
-      .filter(t => !isNaN(t));
-    if (ltis.length === 0) return null;
-    const last = Math.max(...ltis);
-    return Math.max(0, Math.floor((Date.now() - last) / 86400000));
-  }, [incidents]);
-
-  // Days since last incident (any type)
   const daysSinceIncident = useMemo(() => {
     const ts = incidents.map(x => new Date(x.occurred_at).getTime()).filter(t => !isNaN(t));
     if (ts.length === 0) return null;
     return Math.max(0, Math.floor((Date.now() - Math.max(...ts)) / 86400000));
   }, [incidents]);
 
-  const lastLTIDate = useMemo(() => {
-    const ltis = incidents
-      .filter(x => x.incident_type === "lost-time" || x.severity === "high" || x.severity === "critical")
-      .map(x => new Date(x.occurred_at).getTime())
-      .filter(t => !isNaN(t));
-    if (ltis.length === 0) return null;
-    return new Date(Math.max(...ltis)).toLocaleDateString();
-  }, [incidents]);
-
   const handleExport = () => {
     const rows = [
       ["Metric", "Value"],
       ["LTI Count", String(ltiCount)],
-      ["Days Since Last LTI", daysSinceLTI === null ? "N/A" : String(daysSinceLTI)],
-      ["Days Since Last Incident", daysSinceIncident === null ? "N/A" : String(daysSinceIncident)],
+      ["Days Since Incident", daysSinceIncident === null ? "N/A" : String(daysSinceIncident)],
       ["LTIR (per 200k hrs)", String(ltir)],
       ["CAPA Closure %", String(capaClosure)],
       ["Active Vehicles", String(activeVehicles)],
@@ -117,7 +109,6 @@ function Dashboard() {
     URL.revokeObjectURL(url);
   };
 
-  // Incident trend by month (last 12)
   const trendData = useMemo(() => {
     const now = new Date();
     const buckets = Array(12).fill(0);
@@ -130,28 +121,25 @@ function Dashboard() {
   }, [incidents]);
   const max = Math.max(...trendData, 1);
 
-  // LTI breakdown by incident_type
-  const ltiData = useMemo(() => {
-    const counts: Record<string, number> = { "Medical Treatment": 0, "Restricted Work": 0, "Lost Time": 0, "First Aid Only": 0 };
+  // New List-based LTI breakdown
+  const ltiStats = useMemo(() => {
+    const counts = { medical: 0, restricted: 0, lost: 0, firstaid: 0 };
     incidents.forEach(inc => {
-      const t = inc.incident_type;
-      if (t === "lost-time") counts["Lost Time"]++;
-      else if (t === "medical") counts["Medical Treatment"]++;
-      else if (t === "restricted") counts["Restricted Work"]++;
-      else counts["First Aid Only"]++;
+      if (inc.incident_type === "lost-time") counts.lost++;
+      else if (inc.incident_type === "medical") counts.medical++;
+      else if (inc.incident_type === "restricted") counts.restricted++;
+      else counts.firstaid++;
     });
     return [
-      { name: "Medical Treatment", value: counts["Medical Treatment"], color: "hsl(var(--warning))" },
-      { name: "Restricted Work", value: counts["Restricted Work"], color: "hsl(var(--info))" },
-      { name: "Lost Time", value: counts["Lost Time"], color: "hsl(var(--destructive))" },
-      { name: "First Aid Only", value: counts["First Aid Only"], color: "hsl(var(--success))" },
-    ].filter(d => d.value > 0);
+      { label: "Lost Time", value: counts.lost, color: "text-destructive" },
+      { label: "Medical Treatment", value: counts.medical, color: "text-orange-500" },
+      { label: "Restricted Work", value: counts.restricted, color: "text-blue-500" },
+      { label: "First Aid Only", value: counts.firstaid, color: "text-success" },
+    ];
   }, [incidents]);
 
-  // Heatmap: category × likelihood (L1..L5)
   const heatmap = useMemo(() => {
     const cats = Array.from(new Set(risks.map(r => r.category))).slice(0, 5);
-    if (cats.length === 0) return [] as (string | number)[][];
     return cats.map(cat => {
       const row: (string | number)[] = [cat.charAt(0).toUpperCase() + cat.slice(1)];
       for (let l = 1; l <= 5; l++) {
@@ -161,19 +149,19 @@ function Dashboard() {
     });
   }, [risks]);
 
-  // Overdue inspections (acting as CAPA)
   const overdueCapa = useMemo(() => {
     const today = new Date();
     return inspections
       .filter(i => i.due_date && new Date(i.due_date) < today && i.status !== "closed" && i.status !== "completed")
       .slice(0, 4)
-      .map(i => {
-        const days = Math.floor((today.getTime() - new Date(i.due_date!).getTime()) / 86400000);
-        return { id: i.id.slice(0, 8).toUpperCase(), title: i.title, days, owner: "—" };
-      });
+      .map(i => ({
+        id: i.id.slice(0, 8).toUpperCase(),
+        title: i.title,
+        days: Math.floor((today.getTime() - new Date(i.due_date!).getTime()) / 86400000),
+        owner: "Admin"
+      }));
   }, [inspections]);
 
-  // Expiring certifications
   const expiring = useMemo(() => {
     const today = new Date();
     return training
@@ -193,120 +181,132 @@ function Dashboard() {
   return (
     <AppShell
       title="Executive Dashboard"
-      subtitle="Real-time QEHS performance across all sites"
+      subtitle="Real-time QEHS performance summary"
       actions={
-        <>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate({ to: "/reports" })}>
-            <Calendar className="h-4 w-4" /> Last 30 days
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => navigate({ to: "/reports" })}>
+            <Filter className="h-4 w-4 mr-2" /> Filters
           </Button>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate({ to: "/reports" })}>
-            <Filter className="h-4 w-4" /> Filters
+          <Button size="sm" onClick={handleExport}>
+            <Download className="h-4 w-4 mr-2" /> Export CSV
           </Button>
-          <Button size="sm" className="gap-1.5" onClick={handleExport} data-toast-handled="1">
-            <Download className="h-4 w-4" /> Export
-          </Button>
-        </>
+        </div>
       }
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      {/* Top Level KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <KpiCard
-          label="Days Since Last Incident"
+          label="Safety Clock"
           value={daysSinceIncident ?? "—"}
-          suffix={daysSinceIncident !== null ? "days" : undefined}
+          suffix="Days LTI Free"
           icon={CalendarClock}
-          tone={daysSinceIncident === null || daysSinceIncident > 30 ? "success" : daysSinceIncident > 7 ? "warning" : "destructive"}
+          tone={daysSinceIncident === null || daysSinceIncident > 30 ? "success" : "destructive"}
         />
-        <KpiCard
-          label="Days Since Last LTI"
-          value={daysSinceLTI ?? "—"}
-          suffix={daysSinceLTI !== null ? `days${lastLTIDate ? ` · ${lastLTIDate}` : ""}` : undefined}
-          icon={ShieldAlert}
-          tone={daysSinceLTI === null || daysSinceLTI > 90 ? "success" : daysSinceLTI > 30 ? "warning" : "destructive"}
-        />
-        <KpiCard
-          label="LTI Count (YTD)"
-          value={ltiCount}
-          icon={Activity}
-          tone={ltiCount === 0 ? "success" : "destructive"}
-        />
-        <KpiCard
-          label="LTIR"
-          value={ltir}
-          suffix="per 200k hrs"
-          icon={ShieldAlert}
-          tone={Number(ltir) === 0 ? "success" : Number(ltir) < 1 ? "warning" : "destructive"}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <KpiCard label="LTIR" value={ltir} suffix="Rate" icon={ShieldAlert} tone={Number(ltir) === 0 ? "success" : "destructive"} />
         <KpiCard label="CAPA Closure" value={capaClosure} suffix="%" icon={CheckCircle2} tone="primary" />
-        <KpiCard label="Active Vehicles" value={activeVehicles} icon={Truck} tone="info" />
+        <KpiCard label="Fleet Size" value={activeVehicles} icon={Truck} tone="info" />
         <KpiCard label="Open Risks" value={openRisks} icon={AlertTriangle} tone="warning" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        <Section title="Incident Trends" description="Recordable incidents — last 12 months" className="lg:col-span-2"
-          action={<div className="flex gap-1 text-xs"><span className="px-2 py-1 rounded bg-muted">12M</span><span className="px-2 py-1 rounded text-muted-foreground">6M</span><span className="px-2 py-1 rounded text-muted-foreground">3M</span></div>}>
-          <div className="h-56 flex items-end gap-2 pt-4">
-            {trendData.map((v,i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                <div className="w-full rounded-t-md bg-gradient-to-t from-primary to-primary/60" style={{ height: `${(v/max)*100}%` }} />
-                <span className="text-[10px] text-muted-foreground">{["J","F","M","A","M","J","J","A","S","O","N","D"][i]}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        {/* Incident Trends */}
+        <Section 
+          title="Incident Trends" 
+          description="Total recordables (Last 12 Months)" 
+          className="lg:col-span-2"
+          action={<span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Rolling View</span>}
+        >
+          <div className="h-64 flex items-end gap-2 pt-10 px-2">
+            {trendData.map((v, i) => (
+              <div key={i} className="flex-1 group relative flex flex-col items-center">
+                <div 
+                  className="absolute -top-8 bg-popover text-popover-foreground text-[10px] px-2 py-1 rounded border opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10"
+                >
+                  {v} incidents
+                </div>
+                <div 
+                  className="w-full rounded-t-sm bg-primary/20 group-hover:bg-primary transition-all relative" 
+                  style={{ height: `${(v / max) * 100}%`, minHeight: v > 0 ? '4px' : '0' }}
+                />
+                <span className="mt-3 text-[10px] text-muted-foreground font-medium uppercase">
+                  {["J","F","M","A","M","J","J","A","S","O","N","D"][i]}
+                </span>
               </div>
             ))}
           </div>
         </Section>
 
-        <Section title="LTI Breakdown" description="Lost Time Injuries by category — YTD">
-          <div className="h-56">
-            {ltiData.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-xs text-muted-foreground">No incident data</div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={ltiData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={2}>
-                    {ltiData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                  </Pie>
-                  <Tooltip contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
-                  <Legend verticalAlign="bottom" height={36} iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
+        {/* LTI Summary (Replaces Pie Chart) */}
+        <Section title="LTI Breakdown" description="Category distribution YTD">
+          <div className="space-y-4 pt-4">
+            {ltiStats.map((stat, idx) => (
+              <div key={idx} className="flex items-center justify-between p-3 rounded-lg border bg-card/50">
+                <div className="flex items-center gap-3">
+                  <div className={`h-2 w-2 rounded-full ${stat.color.replace('text', 'bg')}`} />
+                  <span className="text-sm font-medium">{stat.label}</span>
+                </div>
+                <span className={`text-lg font-bold ${stat.color}`}>{stat.value}</span>
+              </div>
+            ))}
+            {ltiCount === 0 && <div className="text-center py-10 text-muted-foreground text-sm">No incidents recorded.</div>}
           </div>
         </Section>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        <Section title="Risk Heat Map" description="Department × Severity" className="lg:col-span-3">
-          <div className="space-y-1.5">
-            {heatmap.length === 0 && <div className="text-xs text-muted-foreground py-4">No risks recorded yet.</div>}
-            {heatmap.map((row, i) => (
-              <div key={i} className="flex items-center gap-1.5">
-                <span className="w-20 text-[11px] text-muted-foreground truncate">{row[0]}</span>
-                {(row.slice(1) as number[]).map((v, j) => (
-                  <div key={j} className={`flex-1 h-7 rounded text-[10px] font-semibold flex items-center justify-center ${heatColor(v)}`}>{v}</div>
+      {/* Heatmap Section */}
+      <div className="grid grid-cols-1 gap-6 mb-6">
+        <Section title="Risk Heat Map" description="Probability (L) vs Severity by Category" className="w-full">
+          <div className="pt-4 overflow-x-auto">
+            <div className="min-w-[600px]">
+              <div className="flex mb-3">
+                <div className="w-32" />
+                <div className="flex-1 grid grid-cols-5 gap-2">
+                  {["L1 - Insignificant", "L2 - Minor", "L3 - Moderate", "L4 - Major", "L5 - Critical"].map((l) => (
+                    <span key={l} className="text-center text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">
+                      {l.split(' - ')[0]}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                {heatmap.map((row, i) => (
+                  <div key={i} className="flex items-center">
+                    <span className="w-32 text-xs font-semibold text-muted-foreground pr-4 truncate uppercase tracking-tight">
+                      {row[0]}
+                    </span>
+                    <div className="flex-1 grid grid-cols-5 gap-2">
+                      {(row.slice(1) as number[]).map((v, j) => (
+                        <div key={j} className={`h-12 rounded flex items-center justify-center text-sm transition-all border ${heatColor(v)}`}>
+                          {v > 0 ? v : ""}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
-            ))}
-            {heatmap.length > 0 && <div className="flex items-center gap-1.5 pt-2">
-              <span className="w-20" />
-              {["L1","L2","L3","L4","L5"].map(l => <span key={l} className="flex-1 text-center text-[10px] text-muted-foreground">{l}</span>)}
-            </div>}
+            </div>
           </div>
         </Section>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Section title="Overdue CAPA" description="Action items past SLA"
-          action={<Button variant="ghost" size="sm" onClick={() => navigate({ to: "/incidents" })}>View all</Button>}>
-          <div className="divide-y divide-border">
-            {overdueCapa.length === 0 && <div className="text-xs text-muted-foreground py-4">No overdue items.</div>}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Overdue CAPA */}
+        <Section 
+          title="Overdue CAPA" 
+          description="Urgent actions requiring attention"
+          action={<Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => navigate({ to: "/incidents" })}>View All <ArrowRight className="ml-1 h-3 w-3" /></Button>}
+        >
+          <div className="divide-y divide-border pt-2">
+            {overdueCapa.length === 0 && <div className="text-sm text-muted-foreground py-8 text-center">Zero overdue items.</div>}
             {overdueCapa.map(c => (
-              <div key={c.id} className="py-3 flex items-center gap-3">
-                <div className="h-9 w-9 rounded-lg bg-destructive-soft text-destructive flex items-center justify-center text-xs font-semibold">{c.days}d</div>
+              <div key={c.id} className="py-4 flex items-center gap-4 group">
+                <div className="h-10 w-10 shrink-0 rounded bg-destructive/10 text-destructive flex flex-col items-center justify-center border border-destructive/20">
+                  <span className="text-xs font-bold leading-none">{c.days}</span>
+                  <span className="text-[8px] uppercase font-bold">Days</span>
+                </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">{c.title}</div>
-                  <div className="text-xs text-muted-foreground">{c.id} · {c.owner}</div>
+                  <div className="text-sm font-semibold truncate group-hover:text-primary transition-colors">{c.title}</div>
+                  <div className="text-xs text-muted-foreground font-mono">{c.id} • {c.owner}</div>
                 </div>
                 <StatusBadge status="overdue" />
               </div>
@@ -314,22 +314,30 @@ function Dashboard() {
           </div>
         </Section>
 
-        <Section title="Expiring Certifications" description="Next 60 days"
-          action={<Button variant="ghost" size="sm" onClick={() => navigate({ to: "/training" })}>View all</Button>}>
-          <div className="divide-y divide-border">
-            {expiring.length === 0 && <div className="text-xs text-muted-foreground py-4">No certifications expiring soon.</div>}
-            {expiring.map((e,i) => (
-              <div key={i} className="py-3 flex items-center gap-3">
-                <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center text-xs font-semibold">
-                  {e.name.split(" ").map(n=>n[0]).join("")}
+        {/* Expiring Certifications */}
+        <Section 
+          title="Expiring Certs" 
+          description="Renewals required in < 60 days"
+          action={<Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => navigate({ to: "/training" })}>View All <ArrowRight className="ml-1 h-3 w-3" /></Button>}
+        >
+          <div className="divide-y divide-border pt-2">
+            {expiring.length === 0 && <div className="text-sm text-muted-foreground py-8 text-center">All certifications current.</div>}
+            {expiring.map((e, i) => (
+              <div key={i} className="py-4 flex items-center gap-4">
+                <div className="h-10 w-10 shrink-0 rounded-full bg-muted flex items-center justify-center text-xs font-bold border">
+                  {e.name.split(" ").map(n => n[0]).join("")}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">{e.name}</div>
+                  <div className="text-sm font-semibold truncate">{e.name}</div>
                   <div className="text-xs text-muted-foreground">{e.cert}</div>
                 </div>
-                <span className={`text-xs font-medium ${e.type==="destructive"?"text-destructive":e.type==="warning"?"text-warning-foreground":"text-info"}`}>
+                <div className={`text-xs font-bold px-2 py-1 rounded border ${
+                  e.type === "destructive" ? "bg-destructive/10 text-destructive border-destructive/20" : 
+                  e.type === "warning" ? "bg-warning/10 text-warning-foreground border-warning/20" : 
+                  "bg-info/10 text-info border-info/20"
+                }`}>
                   {e.days}d left
-                </span>
+                </div>
               </div>
             ))}
           </div>

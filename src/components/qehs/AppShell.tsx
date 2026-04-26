@@ -141,61 +141,94 @@ function AppShellInner({ children, title, subtitle, actions }: {
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Topbar */}
-        <header className="h-16 bg-card border-b border-border flex items-center gap-3 px-4 lg:px-6 sticky top-0 z-20">
-          <button onClick={() => setMobileOpen(true)} className="lg:hidden p-2 -ml-2">
-            <Menu className="h-5 w-5" />
-          </button>
-          <div className="hidden md:flex items-center gap-2 flex-1 max-w-md">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search incidents, permits, vehicles…" className="pl-9 h-9 bg-muted/50 border-transparent" />
-            </div>
+        {/* Topbar Header */}
+<header className="h-16 bg-background/80 backdrop-blur-md border-b border-border/60 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-30">
+  
+  {/* Left: Mobile Menu & Branding */}
+  <div className="flex items-center gap-4">
+    <button 
+      onClick={() => setMobileOpen(true)} 
+      className="lg:hidden p-2 -ml-2 text-muted-foreground hover:bg-muted rounded-full transition-colors"
+    >
+      <Menu className="h-5 w-5" />
+    </button>
+    
+    {/* Simple Brand/App Indicator for Mobile context */}
+    <div className="lg:hidden h-8 w-8 rounded bg-primary flex items-center justify-center">
+      <ShieldAlert className="h-5 w-5 text-primary-foreground" />
+    </div>
+  </div>
+
+  {/* Center: Global Search */}
+  <div className="hidden md:flex items-center flex-1 max-w-lg px-4">
+    <div className="relative w-full group">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+      <Input 
+        placeholder="Search records, tasks, or equipment..." 
+        className="pl-10 h-10 bg-muted/40 border-transparent focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-primary/20 transition-all shadow-none"
+      />
+    </div>
+  </div>
+
+  {/* Right: Actions & User Profile */}
+  <div className="flex items-center gap-1 sm:gap-2">
+    <div className="flex items-center border-r border-border/60 pr-2 mr-1 gap-1">
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        className="h-9 w-9 rounded-full text-muted-foreground hover:text-foreground" 
+        onClick={toggleDark}
+      >
+        {dark ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
+      </Button>
+
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        className="h-9 w-9 rounded-full text-muted-foreground hover:text-foreground relative"
+        onClick={() => toast.info("No new notifications")}
+      >
+        <Bell className="h-[18px] w-[18px]" />
+        <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-destructive border-2 border-background" />
+      </Button>
+    </div>
+
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="flex items-center gap-2 hover:bg-muted/60 p-1.5 rounded-full transition-all outline-none">
+          <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-[10px] font-bold shadow-sm ring-2 ring-background">
+            {initials || "U"}
           </div>
-          <div className="flex-1 md:hidden" />
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" className="gap-1.5 h-9"
-              onClick={() => toast("Language", { description: "Switch language: EN · AR · FR · ES" })}>
-              <Globe className="h-4 w-4" /> <span className="hidden sm:inline text-xs">EN</span>
-            </Button>
-            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={toggleDark}>
-              {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
-            <Button variant="ghost" size="icon" className="h-9 w-9 relative"
-              onClick={() => toast.info("3 new notifications", { description: "Permit PTW-1042 awaiting your approval." })}>
-              <Bell className="h-4 w-4" />
-              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-destructive" />
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="ml-2 flex items-center gap-2 pl-3 border-l border-border hover:opacity-80 transition-opacity">
-                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-xs font-semibold">
-                    {initials || "U"}
-                  </div>
-                  <div className="hidden sm:block leading-tight text-left">
-                    <div className="text-sm font-medium truncate max-w-[140px]">{displayName}</div>
-                    <div className="text-[11px] text-muted-foreground">QEHS User</div>
-                  </div>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel className="font-normal">
-                  <div className="text-sm font-medium">{displayName}</div>
-                  <div className="text-xs text-muted-foreground truncate">{user?.email}</div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem data-toast-handled="1">
-                  <UserCircle2 className="h-4 w-4 mr-2" /> Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  data-toast-handled="1"
-                  onClick={async () => { await signOut(); toast.success("Signed out"); }}
-                  className="text-destructive focus:text-destructive">
-                  <LogOut className="h-4 w-4 mr-2" /> Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="hidden md:block text-left leading-none mr-1">
+            <p className="text-sm font-semibold text-foreground">{displayName}</p>
+            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">Account</p>
           </div>
-        </header>
+          <ChevronRight className="h-3 w-3 text-muted-foreground rotate-90 opacity-40" />
+        </button>
+      </DropdownMenuTrigger>
+      
+      <DropdownMenuContent align="end" className="w-56 mt-2">
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">{displayName}</p>
+            <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem className="cursor-pointer">
+          <UserCircle2 className="mr-2 h-4 w-4 opacity-70" /> Profile
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={async () => { await signOut(); toast.success("Signed out"); }}
+          className="text-destructive focus:bg-destructive focus:text-destructive-foreground cursor-pointer"
+        >
+          <LogOut className="mr-2 h-4 w-4" /> Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  </div>
+</header>
 
         {/* Page header */}
         <div className="px-4 lg:px-8 pt-6 pb-4 flex flex-wrap items-end justify-between gap-4" onClick={handleMainClick}>
