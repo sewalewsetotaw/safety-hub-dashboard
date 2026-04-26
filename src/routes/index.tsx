@@ -3,7 +3,7 @@ import { AppShell, StatusBadge } from "@/components/qehs/AppShell";
 import { KpiCard } from "@/components/qehs/widgets/KpiCard";
 import { Section } from "@/components/qehs/widgets/Section";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CheckCircle2, Truck, ShieldAlert, Calendar, Filter, Download } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Truck, ShieldAlert, Calendar, Filter, Download, CalendarClock, Activity } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -78,11 +78,28 @@ function Dashboard() {
     return Math.max(0, Math.floor((Date.now() - last) / 86400000));
   }, [incidents]);
 
+  // Days since last incident (any type)
+  const daysSinceIncident = useMemo(() => {
+    const ts = incidents.map(x => new Date(x.occurred_at).getTime()).filter(t => !isNaN(t));
+    if (ts.length === 0) return null;
+    return Math.max(0, Math.floor((Date.now() - Math.max(...ts)) / 86400000));
+  }, [incidents]);
+
+  const lastLTIDate = useMemo(() => {
+    const ltis = incidents
+      .filter(x => x.incident_type === "lost-time" || x.severity === "high" || x.severity === "critical")
+      .map(x => new Date(x.occurred_at).getTime())
+      .filter(t => !isNaN(t));
+    if (ltis.length === 0) return null;
+    return new Date(Math.max(...ltis)).toLocaleDateString();
+  }, [incidents]);
+
   const handleExport = () => {
     const rows = [
       ["Metric", "Value"],
       ["LTI Count", String(ltiCount)],
       ["Days Since Last LTI", daysSinceLTI === null ? "N/A" : String(daysSinceLTI)],
+      ["Days Since Last Incident", daysSinceIncident === null ? "N/A" : String(daysSinceIncident)],
       ["LTIR (per 200k hrs)", String(ltir)],
       ["CAPA Closure %", String(capaClosure)],
       ["Active Vehicles", String(activeVehicles)],
@@ -191,10 +208,37 @@ function Dashboard() {
         </>
       }
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
-        <KpiCard label="LTI Count" value={ltiCount} icon={ShieldAlert} tone={ltiCount === 0 ? "success" : "destructive"} />
-        <KpiCard label="Days Since Last LTI" value={daysSinceLTI ?? "—"} suffix={daysSinceLTI !== null ? "days" : undefined} icon={ShieldAlert} tone={daysSinceLTI === null || daysSinceLTI > 30 ? "success" : daysSinceLTI > 7 ? "warning" : "destructive"} />
-        <KpiCard label="LTIR" value={ltir} suffix="/200k hrs" icon={ShieldAlert} tone={Number(ltir) === 0 ? "success" : Number(ltir) < 1 ? "warning" : "destructive"} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <KpiCard
+          label="Days Since Last Incident"
+          value={daysSinceIncident ?? "—"}
+          suffix={daysSinceIncident !== null ? "days" : undefined}
+          icon={CalendarClock}
+          tone={daysSinceIncident === null || daysSinceIncident > 30 ? "success" : daysSinceIncident > 7 ? "warning" : "destructive"}
+        />
+        <KpiCard
+          label="Days Since Last LTI"
+          value={daysSinceLTI ?? "—"}
+          suffix={daysSinceLTI !== null ? `days${lastLTIDate ? ` · ${lastLTIDate}` : ""}` : undefined}
+          icon={ShieldAlert}
+          tone={daysSinceLTI === null || daysSinceLTI > 90 ? "success" : daysSinceLTI > 30 ? "warning" : "destructive"}
+        />
+        <KpiCard
+          label="LTI Count (YTD)"
+          value={ltiCount}
+          icon={Activity}
+          tone={ltiCount === 0 ? "success" : "destructive"}
+        />
+        <KpiCard
+          label="LTIR"
+          value={ltir}
+          suffix="per 200k hrs"
+          icon={ShieldAlert}
+          tone={Number(ltir) === 0 ? "success" : Number(ltir) < 1 ? "warning" : "destructive"}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <KpiCard label="CAPA Closure" value={capaClosure} suffix="%" icon={CheckCircle2} tone="primary" />
         <KpiCard label="Active Vehicles" value={activeVehicles} icon={Truck} tone="info" />
         <KpiCard label="Open Risks" value={openRisks} icon={AlertTriangle} tone="warning" />
